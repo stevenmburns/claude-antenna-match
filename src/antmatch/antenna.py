@@ -169,3 +169,87 @@ def evaluate_rational(num: np.ndarray, den: np.ndarray, s_vals: np.ndarray) -> n
     for c in reversed(den):
         den_v = den_v * s_vals + c
     return num_v / den_v
+
+
+# ---------------------------------------------------------------------------
+# Fan dipole with mutual coupling (numerical, not rational)
+# ---------------------------------------------------------------------------
+
+
+def geometric_coupling_matrix(n: int, k_nn: float, decay: float | None = None) -> np.ndarray:
+    """N×N coupling-coefficient matrix with nearest-neighbor strength k_nn.
+
+    Off-diagonal entries decay geometrically with index distance:
+        k_ij = k_nn * decay^(|i-j|-1)   for |i-j| >= 1
+        k_ii = 0
+    `decay` defaults to `k_nn` (so k_ij = k_nn^|i-j|), which keeps the
+    matrix positive-definite for any 0 ≤ k_nn < 1.
+    """
+    if not 0 <= k_nn < 1:
+        raise ValueError(f"k_nn must be in [0, 1), got {k_nn}")
+    if decay is None:
+        decay = k_nn
+    mat = np.zeros((n, n))
+    for i in range(n):
+        for j in range(n):
+            if i != j:
+                mat[i, j] = k_nn * decay ** (abs(i - j) - 1)
+    return mat
+
+
+def fan_dipole_impedance_coupled(
+    elements: list[DipoleElement],
+    coupling: np.ndarray,
+    omegas: np.ndarray,
+    coupling_R: np.ndarray | None = None,
+) -> np.ndarray:
+    """Z_a(jω) for N parallel dipoles with mutual coupling.
+
+    `coupling[i,j]` is the inductive coupling coefficient k_L between the
+    inductances of elements i and j: M_ij = k_L·√(L_i·L_j). Must be
+    symmetric with zero diagonal.
+
+    `coupling_R[i,j]` (optional) is the *resistive* coupling coefficient
+    α_R for mutual radiation resistance: R_ij = α_R·√(R_i·R_j). Defaults
+    to zero (pure magnetic coupling). For parallel half-wave dipoles at
+    d/λ << 1 (the dominant case in a multi-spacer fan dipole), α_R is
+    nearly 1 and is the DOMINANT coupling mechanism.
+
+    Each frequency yields N×N complex Z:
+        Z_ii(jω) = R_i + jω·L_i + 1/(jω·C_i)
+        Z_ij(jω) = α_R_ij·√(R_i·R_j) + jω·k_L_ij·√(L_i·L_j)   (i≠j)
+
+    All elements share feedpoint voltage V; Y_a = 1ᵀ·Z⁻¹·1.
+    Returns Z_a(jω) at each frequency (numerical, not rational form).
+    """
+    n = len(elements)
+    if coupling.shape != (n, n):
+        raise ValueError(f"coupling shape {coupling.shape} != ({n}, {n})")
+    if not np.allclose(coupling, coupling.T):
+        raise ValueError("coupling matrix must be symmetric")
+    if not np.allclose(np.diag(coupling), 0.0):
+        raise ValueError("coupling matrix diagonal must be 0")
+    if coupling_R is not None:
+        if coupling_R.shape != (n, n):
+            raise ValueError(f"coupling_R shape {coupling_R.shape} != ({n}, {n})")
+        if not np.allclose(coupling_R, coupling_R.T):
+            raise ValueError("coupling_R must be symmetric")
+        if not np.allclose(np.diag(coupling_R), 0.0):
+            raise ValueError("coupling_R diagonal must be 0")
+
+    L = np.array([el.l_h for el in elements])
+    C = np.array([el.c_f for el in elements])
+    R = np.array([el.r_rad for el in elements])
+    M = coupling * np.sqrt(np.outer(L, L))  # N×N mutual inductances
+    R_mut = coupling_R * np.sqrt(np.outer(R, R)) if coupling_R is not None else np.zeros((n, n))
+
+    omegas = np.asarray(omegas, dtype=float)
+    z_a = np.zeros_like(omegas, dtype=complex)
+    ones = np.ones(n)
+    for idx, w in enumerate(omegas):
+        z_mat = R_mut + 1j * w * M
+        z_diag = R + 1j * w * L + 1.0 / (1j * w * C)
+        z_mat[np.diag_indices(n)] = z_diag
+        x = np.linalg.solve(z_mat, ones)
+        z_a[idx] = 1.0 / np.sum(x)
+    return z_a
