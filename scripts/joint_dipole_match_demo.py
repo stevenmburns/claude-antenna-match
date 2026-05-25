@@ -45,9 +45,7 @@ def print_band_table(f_mhz: np.ndarray, t: np.ndarray, prefix: str = "  ") -> No
     print(f"{prefix}worst-case T = {worst:.4f}   worst SWR = {t_to_swr(worst):.2f}")
 
 
-def scenario(
-    f_mhz: np.ndarray, ladder_kinds: list[str], default_legs_m: np.ndarray
-) -> None:
+def scenario(f_mhz: np.ndarray, ladder_kinds: list[str], default_legs_m: np.ndarray) -> None:
     w = 2 * np.pi * f_mhz * 1e6
 
     # (1) default lengths, no match
@@ -71,9 +69,7 @@ def scenario(
         n_restarts=30,
         max_iter=500,
     )
-    opt_f_mhz = [
-        VF_BARE_WIRE * C_LIGHT / (4.0 * L) / 1e6 for L in r_lonly.leg_lengths_m
-    ]
+    opt_f_mhz = [VF_BARE_WIRE * C_LIGHT / (4.0 * L) / 1e6 for L in r_lonly.leg_lengths_m]
     print(
         f"(2) optimum lengths {[round(L, 3) for L in r_lonly.leg_lengths_m]} m "
         f"(resonances near {', '.join(f'{f:.2f}' for f in opt_f_mhz)} MHz), no matching:"
@@ -89,9 +85,7 @@ def scenario(
         n_restarts=40,
         max_iter=800,
     )
-    opt_f_mhz_j = [
-        VF_BARE_WIRE * C_LIGHT / (4.0 * L) / 1e6 for L in r_joint.leg_lengths_m
-    ]
+    opt_f_mhz_j = [VF_BARE_WIRE * C_LIGHT / (4.0 * L) / 1e6 for L in r_joint.leg_lengths_m]
     print(
         f"(3) joint optimum: lengths {[round(L, 3) for L in r_joint.leg_lengths_m]} m "
         f"(resonances near {', '.join(f'{f:.2f}' for f in opt_f_mhz_j)} MHz)"
