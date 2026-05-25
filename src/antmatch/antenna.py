@@ -89,8 +89,8 @@ class DipoleElement:
         Multiply numerator and denominator by s·C to clear the 1/s term:
             Z(s) = (1 + s·R·C + s²·L·C) / (s·C)
         """
-        r, l, c = self.r_rad, self.l_h, self.c_f
-        num = np.array([1.0, r * c, l * c])
+        r, L, c = self.r_rad, self.l_h, self.c_f
+        num = np.array([1.0, r * c, L * c])
         den = np.array([0.0, c])
         return num, den
 
@@ -160,9 +160,7 @@ def fan_dipole_impedance(
 # ---------------------------------------------------------------------------
 
 
-def evaluate_rational(
-    num: np.ndarray, den: np.ndarray, s_vals: np.ndarray
-) -> np.ndarray:
+def evaluate_rational(num: np.ndarray, den: np.ndarray, s_vals: np.ndarray) -> np.ndarray:
     """Evaluate Z(s) = num(s)/den(s) at complex points s_vals via Horner."""
     num_v = np.zeros_like(s_vals, dtype=complex)
     for c in reversed(num):

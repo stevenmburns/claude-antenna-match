@@ -46,9 +46,9 @@ def test_cascade_passthrough_with_no_sections():
 def test_cascade_series_l_adds_jwl():
     z_l = np.array([50 + 0j])
     w = np.array([2e8])
-    l = 1e-7  # 100 nH
-    z_in = cascade_zin(["L_series"], np.array([l]), z_l, w)
-    expected = 50 + 1j * w[0] * l
+    L_h = 1e-7  # 100 nH
+    z_in = cascade_zin(["L_series"], np.array([L_h]), z_l, w)
+    expected = 50 + 1j * w[0] * L_h
     assert np.allclose(z_in, expected)
 
 
