@@ -15,8 +15,9 @@ python -m venv .venv
 source .venv/bin/activate
 pip install -e ".[dev]"
 
-pytest                                                 # ~6 s, 11 tests
+pytest                                                 # ~10 s, 18 tests
 python scripts/joint_dipole_match_demo.py              # ~1-2 min
+python scripts/yarman_aksen_demo.py                    # ~3-4 min
 ```
 
 ## What's in the box
@@ -30,10 +31,17 @@ python scripts/joint_dipole_match_demo.py              # ~1-2 min
   leg lengths *and* matching ladder. Passing `ladder_kinds=[]` runs a
   length-only optimization (isolates the value of picking the right
   lengths from the value of adding L/C).
-- `antmatch.matching.solve_carlin_upper_bound` — labeled-incomplete
-  scaffold for Carlin's real-frequency technique. Returns an optimistic
-  upper bound (does not enforce bounded-real realizability); kept for a
-  future Yarman-Aksen polynomial-parameterization v2.
+- `antmatch.yarman_aksen.solve_yarman_aksen` — proper Carlin/Yarman-Aksen
+  real-frequency technique using Belevitch polynomial parameterization of
+  a lossless 2-port. Realizability enforced by construction (the (h, f, g)
+  triple is bounded-real), so the worst-case transducer gain it returns
+  is a true Bode-Fano upper bound for any lossless matching network of
+  the chosen complexity. Reports T values only — synthesizing component
+  values from the optimum (h, f, g) is a separate Darlington/Brune step
+  (not implemented).
+- `antmatch.matching.solve_carlin_upper_bound` — earlier scaffold,
+  labeled-incomplete (does not enforce realizability). Superseded by
+  `antmatch.yarman_aksen`; kept for the historical exposition.
 
 ## Antenna model caveats
 
