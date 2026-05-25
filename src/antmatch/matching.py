@@ -165,9 +165,7 @@ class CarlinResult:
     message: str
 
 
-def _interp_at(
-    omegas_grid: np.ndarray, values: np.ndarray, omegas_q: np.ndarray
-) -> np.ndarray:
+def _interp_at(omegas_grid: np.ndarray, values: np.ndarray, omegas_q: np.ndarray) -> np.ndarray:
     return np.interp(omegas_q, omegas_grid, values)
 
 
@@ -205,9 +203,7 @@ def solve_carlin_upper_bound(
 
     def objective(x):
         r_bp = unpack(x)
-        r11_grid = _r11_from_breakpts(
-            problem.omegas_grid, problem.omegas_breakpts, r_bp
-        )
+        r11_grid = _r11_from_breakpts(problem.omegas_grid, problem.omegas_breakpts, r_bp)
         x11_grid = hilbert_from_resistance(problem.omegas_grid, r11_grid)
         r_at = _interp_at(problem.omegas_grid, r11_grid, problem.omegas_design)
         x_at = _interp_at(problem.omegas_grid, x11_grid, problem.omegas_design)
@@ -308,9 +304,7 @@ class LadderResult:
     message: str
 
 
-def _initial_values(
-    kinds: list[str], omega_center: float, r_source: float
-) -> np.ndarray:
+def _initial_values(kinds: list[str], omega_center: float, r_source: float) -> np.ndarray:
     """Reasonable cold-start values centered on the design band."""
     init = np.empty(len(kinds))
     for i, k in enumerate(kinds):
@@ -356,12 +350,8 @@ def solve_lc_ladder(
     def objective(log_x):
         values = np.exp(log_x)
         z_in = cascade_zin(kinds, values, problem.z_load_design, problem.omegas_design)
-        t = transducer_gain(
-            z_in.real, z_in.imag, problem.z_load_design, problem.r_source
-        )
-        return (1.0 / alpha_softmin) * np.log(
-            np.sum(problem.weights * np.exp(-alpha_softmin * t))
-        )
+        t = transducer_gain(z_in.real, z_in.imag, problem.z_load_design, problem.r_source)
+        return (1.0 / alpha_softmin) * np.log(np.sum(problem.weights * np.exp(-alpha_softmin * t)))
 
     starts: list[np.ndarray] = [np.log(physics)]
     if init_values is not None:
@@ -385,12 +375,8 @@ def solve_lc_ladder(
 
     assert best_res is not None
     values_opt = np.exp(best_res.x)
-    z_in_opt = cascade_zin(
-        kinds, values_opt, problem.z_load_design, problem.omegas_design
-    )
-    t_opt = transducer_gain(
-        z_in_opt.real, z_in_opt.imag, problem.z_load_design, problem.r_source
-    )
+    z_in_opt = cascade_zin(kinds, values_opt, problem.z_load_design, problem.omegas_design)
+    t_opt = transducer_gain(z_in_opt.real, z_in_opt.imag, problem.z_load_design, problem.r_source)
 
     return LadderResult(
         kinds=list(kinds),
@@ -399,9 +385,7 @@ def solve_lc_ladder(
         gain_design=t_opt,
         worst_gain=float(t_opt.min()),
         success=best_res.success,
-        message=best_res.message
-        if isinstance(best_res.message, str)
-        else str(best_res.message),
+        message=best_res.message if isinstance(best_res.message, str) else str(best_res.message),
     )
 
 
@@ -487,9 +471,7 @@ def solve_joint_lengths_and_ladder(
     )
     legs_phys = VF_BARE_WIRE * C_LIGHT_LOCAL / (2.0 * cluster_centers)
     ladder_phys = (
-        _initial_values(ladder_kinds, omega_center, r_source)
-        if ladder_kinds
-        else np.array([])
+        _initial_values(ladder_kinds, omega_center, r_source) if ladder_kinds else np.array([])
     )
 
     log_lb = np.log(leg_bounds_m[0])
@@ -523,9 +505,7 @@ def solve_joint_lengths_and_ladder(
             return 1e6
         if not np.all(np.isfinite(t)):
             return 1e6
-        return (1.0 / alpha_softmin) * np.log(
-            np.sum(weights * np.exp(-alpha_softmin * t))
-        )
+        return (1.0 / alpha_softmin) * np.log(np.sum(weights * np.exp(-alpha_softmin * t)))
 
     # Bounds: legs clipped to physical range; ladder values unbounded.
     bounds = [(log_lb, log_ub)] * n_dipoles + [(None, None)] * len(ladder_kinds)
@@ -542,16 +522,12 @@ def solve_joint_lengths_and_ladder(
     for _ in range(n_restarts):
         leg_perturb = rng.normal(0.0, 0.5, size=n_dipoles)  # ~×÷1.6
         ladder_perturb = (
-            rng.normal(0.0, 2.0, size=len(ladder_kinds))
-            if ladder_kinds
-            else np.array([])
+            rng.normal(0.0, 2.0, size=len(ladder_kinds)) if ladder_kinds else np.array([])
         )
         log_start = np.concatenate(
             [
                 np.clip(np.log(legs_phys) + leg_perturb, log_lb, log_ub),
-                np.log(ladder_phys) + ladder_perturb
-                if len(ladder_phys)
-                else np.array([]),
+                np.log(ladder_phys) + ladder_perturb if len(ladder_phys) else np.array([]),
             ]
         )
         starts.append(log_start)
@@ -585,9 +561,7 @@ def solve_joint_lengths_and_ladder(
         gain_design=t_opt,
         worst_gain=float(t_opt.min()),
         success=best_res.success,
-        message=best_res.message
-        if isinstance(best_res.message, str)
-        else str(best_res.message),
+        message=best_res.message if isinstance(best_res.message, str) else str(best_res.message),
     )
 
 

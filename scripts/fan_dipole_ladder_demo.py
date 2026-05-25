@@ -45,9 +45,7 @@ def print_per_band(label: str, f_mhz: np.ndarray, t: np.ndarray) -> None:
     print(f"{'f (MHz)':>10} {'T':>8} {'SWR':>8}")
     for f, ti in zip(f_mhz, t, strict=False):
         print(f"{f:>10.3f} {ti:>8.4f} {t_to_swr(ti):>8.2f}")
-    print(
-        f"  worst-case T = {t.min():.4f}   worst SWR = {t_to_swr(float(t.min())):.2f}"
-    )
+    print(f"  worst-case T = {t.min():.4f}   worst SWR = {t_to_swr(float(t.min())):.2f}")
     print()
 
 
